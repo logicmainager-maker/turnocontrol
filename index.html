@@ -1875,8 +1875,9 @@
         <!-- acceso rápido: aparece solo si este dispositivo ya recordó a alguien -->
         <div id="mySchedQuickCard" style="display:none;">
           <p class="login-sub" id="mySchedQuickWho">¿Eres tú?</p>
+          <button class="btn btn-accent login-submit" type="button" id="mySchedBiometricBtn" style="display:none;">👆 Entrar con huella / Face ID</button>
           <button class="btn btn-accent login-submit" type="button" id="mySchedQuickBtn">🔓 Entrar rápido</button>
-          <p class="login-hint">Este dispositivo recuerda tu acceso, así que no hace falta escribir el PIN otra vez.</p>
+          <p class="login-hint" id="mySchedQuickHint">Este dispositivo recuerda tu acceso, así que no hace falta escribir el PIN otra vez.</p>
           <div class="login-divider"><span>o</span></div>
           <button type="button" class="btn btn-ghost login-submit" id="mySchedNotMeBtn">No soy yo / olvidar este dispositivo</button>
         </div>
@@ -1898,6 +1899,10 @@
           <label class="check-row" id="mySchedRememberRow" style="display:none;">
             <input type="checkbox" id="mySchedRememberDevice">
             <span>Recordar este dispositivo (acceso rápido sin PIN la próxima vez)</span>
+          </label>
+          <label class="check-row" id="mySchedBiometricRow" style="display:none;">
+            <input type="checkbox" id="mySchedEnableBiometric">
+            <span>Activar huella / Face ID en este dispositivo</span>
           </label>
           <p class="login-error" id="mySchedError" style="display:none;"></p>
           <p class="params-hint" id="mySchedNoPinHint" style="display:none;">Este empleado todavía no tiene un PIN asignado. Pídele a tu líder o jefe que te lo configure desde Parámetros → Empleados.</p>
@@ -5114,6 +5119,100 @@
     return emp;
   }
 
+  /* ---------- biometría real (huella / Face ID) vía WebAuthn ----------
+     A diferencia del "acceso rápido" de arriba (que solo recuerda un PIN),
+     esto usa la API estándar WebAuthn del navegador para pedirle al sistema
+     operativo del dispositivo (no a la app) que verifique la huella o el
+     rostro de la persona, igual que al desbloquear el celular. La app nunca
+     ve ni guarda datos biométricos — solo recibe un "sí, el dispositivo lo
+     validó" de parte del sistema operativo. Solo funciona en un dominio
+     propio con HTTPS (como GitHub Pages), no dentro del iframe de un
+     artifact de Claude, por eso antes no era posible acá. */
+  var WEBAUTHN_KEY = "control-turnos-webauthn";
+  function webAuthnSupported() {
+    return typeof window.PublicKeyCredential !== "undefined" && !!navigator.credentials;
+  }
+  function b64urlEncode(buf) {
+    var bytes = new Uint8Array(buf), str = "";
+    for (var i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
+    return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function b64urlDecode(str) {
+    str = str.replace(/-/g, "+").replace(/_/g, "/");
+    while (str.length % 4) str += "=";
+    var bin = atob(str), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+  }
+  function getWebAuthnCreds() {
+    try {
+      var raw = localStorage.getItem(WEBAUTHN_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch(e) { return {}; }
+  }
+  function setWebAuthnCred(empId, credentialId) {
+    var all = getWebAuthnCreds();
+    all[empId] = credentialId;
+    try { localStorage.setItem(WEBAUTHN_KEY, JSON.stringify(all)); } catch(e){}
+  }
+  function clearWebAuthnCred(empId) {
+    var all = getWebAuthnCreds();
+    delete all[empId];
+    try { localStorage.setItem(WEBAUTHN_KEY, JSON.stringify(all)); } catch(e){}
+  }
+  /* empleado (si alguno) cuya huella ya quedó registrada en este dispositivo */
+  function webAuthnEmployeeForDevice() {
+    var all = getWebAuthnCreds();
+    var empId = Object.keys(all)[0]; // este dispositivo solo recuerda una huella a la vez
+    if (!empId) return null;
+    var emp = state.employees.find(function(e){ return e.id === empId; });
+    if (!emp) { clearWebAuthnCred(empId); return null; }
+    return emp;
+  }
+  /* registra la huella/Face ID de este dispositivo para el empleado, después
+     de que ya validó su PIN correctamente (no reemplaza el PIN, lo complementa) */
+  async function registerBiometric(empId, empName) {
+    if (!webAuthnSupported()) return false;
+    try {
+      var challenge = new Uint8Array(32);
+      crypto.getRandomValues(challenge);
+      var userId = new Uint8Array(16);
+      crypto.getRandomValues(userId);
+      var cred = await navigator.credentials.create({
+        publicKey: {
+          challenge: challenge,
+          rp: { name: "TurnoControl" },
+          user: { id: userId, name: empId, displayName: empName },
+          pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+          authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+          timeout: 60000
+        }
+      });
+      if (!cred) return false;
+      setWebAuthnCred(empId, b64urlEncode(cred.rawId));
+      return true;
+    } catch(e) { return false; }
+  }
+  /* pide la huella/Face ID y retorna el empId si el sistema operativo confirma la identidad */
+  async function verifyBiometric() {
+    var all = getWebAuthnCreds();
+    var empId = Object.keys(all)[0];
+    if (!empId) return null;
+    try {
+      var challenge = new Uint8Array(32);
+      crypto.getRandomValues(challenge);
+      var assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: challenge,
+          allowCredentials: [{ id: b64urlDecode(all[empId]), type: "public-key" }],
+          userVerification: "required",
+          timeout: 60000
+        }
+      });
+      return assertion ? empId : null;
+    } catch(e) { return null; }
+  }
+
   function populateMySchedEmpSelect() {
     var sel = document.getElementById("mySchedEmp");
     var current = sel.value || (function(){ try { return localStorage.getItem(MY_SCHED_EMP_KEY) || ""; } catch(e){ return ""; } })();
@@ -5128,14 +5227,28 @@
     var quickCard = document.getElementById("mySchedQuickCard");
     var fullForm = document.getElementById("mySchedFullForm");
     if (!quickCard || !fullForm) return;
-    var emp = deviceAuthEmployee();
+    var pinEmp = deviceAuthEmployee();
+    var bioEmp = webAuthnEmployeeForDevice();
+    var emp = pinEmp || bioEmp;
+    var bioBtn = document.getElementById("mySchedBiometricBtn");
+    var hint = document.getElementById("mySchedQuickHint");
     if (emp && !mySchedUnlockedEmpId) {
       document.getElementById("mySchedQuickWho").textContent = "Hola de nuevo, " + emp.name.split(" ")[0] + " 👋";
       quickCard.style.display = "";
       fullForm.style.display = "none";
+      if (bioEmp && webAuthnSupported()) {
+        if (bioBtn) bioBtn.style.display = "";
+        if (hint) hint.textContent = pinEmp
+          ? "Este dispositivo recuerda tu acceso: usa tu huella/Face ID o entra rápido sin PIN."
+          : "Este dispositivo tiene tu huella/Face ID activada.";
+      } else {
+        if (bioBtn) bioBtn.style.display = "none";
+        if (hint) hint.textContent = "Este dispositivo recuerda tu acceso, así que no hace falta escribir el PIN otra vez.";
+      }
     } else {
       quickCard.style.display = "none";
       fullForm.style.display = "";
+      if (bioBtn) bioBtn.style.display = "none";
     }
   }
 
@@ -5145,14 +5258,26 @@
     var noPinHint = document.getElementById("mySchedNoPinHint");
     var unlockBtn = document.getElementById("mySchedUnlockBtn");
     var rememberRow = document.getElementById("mySchedRememberRow");
+    var biometricRow = document.getElementById("mySchedBiometricRow");
     document.getElementById("mySchedError").style.display = "none";
-    if (!emp) { pinField.style.display = "none"; noPinHint.style.display = "none"; unlockBtn.style.display = "none"; if (rememberRow) rememberRow.style.display = "none"; return; }
+    if (!emp) {
+      pinField.style.display = "none"; noPinHint.style.display = "none"; unlockBtn.style.display = "none";
+      if (rememberRow) rememberRow.style.display = "none";
+      if (biometricRow) biometricRow.style.display = "none";
+      return;
+    }
     if (emp.pinHash) {
       pinField.style.display = ""; unlockBtn.style.display = ""; noPinHint.style.display = "none";
       if (rememberRow) { rememberRow.style.display = ""; document.getElementById("mySchedRememberDevice").checked = false; }
+      if (biometricRow) {
+        biometricRow.style.display = webAuthnSupported() ? "" : "none";
+        var bioChk = document.getElementById("mySchedEnableBiometric");
+        if (bioChk) bioChk.checked = false;
+      }
     } else {
       pinField.style.display = "none"; unlockBtn.style.display = "none"; noPinHint.style.display = "";
       if (rememberRow) rememberRow.style.display = "none";
+      if (biometricRow) biometricRow.style.display = "none";
     }
   }
 
@@ -5174,13 +5299,31 @@
     updateProfileMenu();
   }
 
-  /* entra sin pedir PIN, usando la credencial de dispositivo ya guardada */
+  /* entra sin pedir PIN, usando la credencial de dispositivo ya guardada (o la huella) */
   function attemptMySchedQuickUnlock() {
-    var emp = deviceAuthEmployee();
+    var emp = deviceAuthEmployee() || webAuthnEmployeeForDevice();
     if (!emp) { updateMySchedQuickUI(); return; } /* la credencial dejó de ser válida (PIN cambió, etc.) */
     try { localStorage.setItem(MY_SCHED_EMP_KEY, emp.id); } catch(e){}
     mySchedUnlockedEmpId = emp.id;
     document.body.classList.remove("emp-pin-locked");
+    updateProfileMenu();
+    switchTab("home");
+  }
+
+  /* entra usando la huella / Face ID registrada en este dispositivo */
+  async function attemptMySchedBiometricUnlock() {
+    var errEl = document.getElementById("mySchedError");
+    var empId = await verifyBiometric();
+    if (!empId) {
+      if (errEl) { errEl.textContent = "No se pudo verificar la huella / Face ID."; errEl.style.display = ""; }
+      return;
+    }
+    var emp = state.employees.find(function(e){ return e.id === empId; });
+    if (!emp) { clearWebAuthnCred(empId); updateMySchedQuickUI(); return; }
+    try { localStorage.setItem(MY_SCHED_EMP_KEY, emp.id); } catch(e){}
+    mySchedUnlockedEmpId = emp.id;
+    document.body.classList.remove("emp-pin-locked");
+    if (errEl) errEl.style.display = "none";
     updateProfileMenu();
     switchTab("home");
   }
@@ -5201,6 +5344,16 @@
     try { localStorage.setItem(MY_SCHED_EMP_KEY, empId); } catch(e){}
     var rememberEl = document.getElementById("mySchedRememberDevice");
     if (rememberEl && rememberEl.checked) setDeviceAuth(empId, emp.pinHash); else clearDeviceAuth();
+    var bioEl = document.getElementById("mySchedEnableBiometric");
+    if (bioEl && bioEl.checked) {
+      registerBiometric(empId, emp.name).then(function(ok){
+        if (!ok) {
+          var errEl2 = document.getElementById("mySchedError");
+          if (errEl2) { errEl2.textContent = "No se pudo activar la huella / Face ID en este dispositivo."; errEl2.style.display = ""; }
+        }
+        updateMySchedQuickUI();
+      });
+    }
     mySchedUnlockedEmpId = empId;
     document.body.classList.remove("emp-pin-locked");
     document.getElementById("mySchedPin").value = "";
@@ -5490,8 +5643,12 @@
   document.getElementById("mySchedUnlockBtn").addEventListener("click", attemptMySchedUnlock);
   document.getElementById("mySchedExitBtn").addEventListener("click", exitEmployeeOnlyMode);
   document.getElementById("mySchedQuickBtn").addEventListener("click", attemptMySchedQuickUnlock);
+  var mySchedBioBtnEl = document.getElementById("mySchedBiometricBtn");
+  if (mySchedBioBtnEl) mySchedBioBtnEl.addEventListener("click", attemptMySchedBiometricUnlock);
   document.getElementById("mySchedNotMeBtn").addEventListener("click", function(){
+    var forgottenEmp = deviceAuthEmployee() || webAuthnEmployeeForDevice();
     clearDeviceAuth();
+    if (forgottenEmp) clearWebAuthnCred(forgottenEmp.id);
     updateMySchedQuickUI();
   });
   document.getElementById("mySchedPin").addEventListener("keydown", function(e){ if (e.key === "Enter") attemptMySchedUnlock(); });
