@@ -1404,6 +1404,27 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase (SDK "compat", misma sintaxis que window.claude.use("db") del
+     artifact original: db.collection(...).doc(...).set()/.get()/.onSnapshot(),
+     así que no hubo que reescribir ninguna de las llamadas ya existentes.
+     Reemplaza los valores de FIREBASE_CONFIG abajo por los de tu propio
+     proyecto en https://console.firebase.google.com (Project settings →
+     Your apps → config de la app web). Sin esto configurado, la app sigue
+     funcionando en modo "Local (sin conexión)" igual que antes, pero cada
+     dispositivo guarda sus propios datos por separado. -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+  var FIREBASE_CONFIG = {
+    apiKey: "AIzaSyBC8jjV29ahdmKtH2O25nvwuis9jtVqCUo",
+    authDomain: "turnocontrol-a97b4.firebaseapp.com",
+    projectId: "turnocontrol-a97b4",
+    storageBucket: "turnocontrol-a97b4.firebasestorage.app",
+    messagingSenderId: "777090810101",
+    appId: "1:777090810101:web:359b1b438ad6bda78b85bc"
+  };
+</script>
 </head>
 <body>
 
@@ -3105,7 +3126,16 @@
 
   async function initDb() {
     try {
-      db = await window.claude.use("db");
+      if (typeof window.claude !== "undefined" && window.claude && window.claude.use) {
+        /* dentro del artifact de Claude, sigue usando la base de datos propia del sandbox */
+        db = await window.claude.use("db");
+      } else if (typeof firebase !== "undefined" && FIREBASE_CONFIG.apiKey !== "REEMPLAZAR") {
+        /* fuera del artifact (GitHub Pages, etc.): usa Firebase Firestore real */
+        var app = firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.firestore(app);
+      } else {
+        db = null;
+      }
     } catch (e) { db = null; }
     if (!db) {
       localSeed();
