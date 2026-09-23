@@ -1171,6 +1171,17 @@
   #recoverModalBackdrop { z-index: 110; }
   .login-divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 11.5px; margin: 2px 0; }
   .login-divider::before, .login-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .biometric-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 18px 12px; margin-top: 2px; cursor: pointer;
+    background: var(--accent-soft, #eef1ff); border: 1.5px solid var(--accent, #2e4be0);
+    border-radius: 14px; color: var(--accent, #2e4be0); font-weight: 700; font-size: 13.5px;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .biometric-btn:hover { background: var(--accent, #2e4be0); color: #fff; }
+  .biometric-btn:active { transform: scale(0.98); }
+  .biometric-btn:hover .biometric-icon { color: #fff; }
+  .biometric-icon { width: 40px; height: 40px; color: var(--accent, #2e4be0); }
   /* same card look as the líder/jefe login, but inline within the panel
      (not position:fixed) so it sits below the topbar and above the bottom nav */
   .login-overlay-inline { display: flex; align-items: center; justify-content: center; padding: 24px 0 40px; min-height: calc(100vh - 40px); }
@@ -1875,7 +1886,18 @@
         <!-- acceso rápido: aparece solo si este dispositivo ya recordó a alguien -->
         <div id="mySchedQuickCard" style="display:none;">
           <p class="login-sub" id="mySchedQuickWho">¿Eres tú?</p>
-          <button class="btn btn-accent login-submit" type="button" id="mySchedBiometricBtn" style="display:none;">👆 Entrar con huella / Face ID</button>
+          <button type="button" id="mySchedBiometricBtn" class="biometric-btn" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="biometric-icon" aria-hidden="true">
+              <path d="M12 11c0 3-.4 5.6-1.4 8"></path>
+              <path d="M8.5 20c.3-1 .6-1.9.9-3"></path>
+              <path d="M6.3 17.5c.6-2 1-4 1-6.5a4.7 4.7 0 0 1 9.4 0"></path>
+              <path d="M4.5 15.5c.4-1.5.6-3 .6-4.5a6.9 6.9 0 0 1 13.8 0c0 1 0 1.9-.1 2.7"></path>
+              <path d="M17.4 20a20.7 20.7 0 0 0 1.1-5.5"></path>
+              <path d="M2.7 10.5A9.3 9.3 0 0 1 12 2a9.3 9.3 0 0 1 9.3 8.5"></path>
+              <path d="M9.5 11a2.5 2.5 0 0 1 5 0c0 3.5-.5 6.5-1.8 9.5"></path>
+            </svg>
+            <span>Entrar con huella digital</span>
+          </button>
           <button class="btn btn-accent login-submit" type="button" id="mySchedQuickBtn">🔓 Entrar rápido</button>
           <p class="login-hint" id="mySchedQuickHint">Este dispositivo recuerda tu acceso, así que no hace falta escribir el PIN otra vez.</p>
           <div class="login-divider"><span>o</span></div>
