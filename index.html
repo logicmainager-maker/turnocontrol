@@ -2128,7 +2128,7 @@
   <section class="panel" id="panel-requests">
     <div class="params-card">
       <h3>Solicitudes de cambio de turno</h3>
-      <p class="params-hint">Cuando un empleado hace una solicitud desde "Mi horario", aparece aquí para que la apruebes o la rechaces. Si la fecha propuesta no te sirve, usa <b>"Modificar"</b> para cambiarla antes de aprobar. Al aprobar <b>vacaciones, incapacidad o permiso</b>, la novedad se registra sola en el horario para todo el rango de fechas. Al aprobar un <b>cambio de horario o día libre</b> puntual, no se modifica el turno automáticamente — usa "Ir al turno" para editarlo tú mismo en Programación.</p>
+      <p class="params-hint">Cuando un empleado hace una solicitud desde "Mi horario", aparece aquí para que la apruebes o la rechaces. Si la fecha propuesta no te sirve, usa <b>"Modificar"</b> para cambiarla antes de aprobar. Al aprobar <b>vacaciones, incapacidad o permiso</b>, la novedad se registra sola en el horario para todo el rango de fechas. Al aprobar un <b>cambio de horario o día libre</b> puntual, no se modifica el turno automáticamente — usa "Ir al turno" para editarlo tú mismo en Programación. Si ya aprobaste o rechazaste una solicitud por error, en la pestaña "Todas" puedes usar <b>"Reabrir / cambiar decisión"</b> para volverla a dejar pendiente (si había registrado una novedad en el horario, se quita automáticamente).</p>
       <div class="preset-row">
         <button type="button" class="preset-btn active" id="reqFilterPending">Pendientes</button>
         <button type="button" class="preset-btn" id="reqFilterAll">Todas</button>
@@ -5809,7 +5809,12 @@
           '<button type="button" data-req-approve="' + r.id + '">Aprobar</button>' +
           '<button type="button" class="tmpl-rm-btn" data-req-reject="' + r.id + '">Rechazar</button>' +
         '</div>'
-      ) : (r.resolvedByName ? '<div class="h-change" style="margin-top:4px;">Resuelta por <b>' + escapeHtml(r.resolvedByName) + '</b></div>' : '');
+      ) : (
+        (r.resolvedByName ? '<div class="h-change" style="margin-top:4px;">Resuelta por <b>' + escapeHtml(r.resolvedByName) + '</b></div>' : '') +
+        '<div class="tmpl-actions" style="margin-top:6px;">' +
+          '<button type="button" data-req-reopen="' + r.id + '">Reabrir / cambiar decisión</button>' +
+        '</div>'
+      );
       return '<div class="history-row">' +
         '<div class="h-top"><span class="h-name">' + escapeHtml(empNameById(r.empId)) + ' · ' + dateStr + '</span>' + statusPill + '</div>' +
         '<div class="h-change">' + REQ_TYPE_LABEL[r.type] + ' — ' + detail + '</div>' +
@@ -5832,6 +5837,9 @@
     });
     list.querySelectorAll("[data-req-reject]").forEach(function(btn){
       btn.addEventListener("click", function(){ resolveShiftRequest(btn.getAttribute("data-req-reject"), "rejected"); });
+    });
+    list.querySelectorAll("[data-req-reopen]").forEach(function(btn){
+      btn.addEventListener("click", function(){ reopenShiftRequest(btn.getAttribute("data-req-reopen")); });
     });
   }
 
@@ -5943,6 +5951,56 @@
 
     if (status === "approved" && novedadType && skippedCount > 0) {
       showToast('Se registró "' + TYPE_LABEL[novedadType] + '" en ' + appliedCount + ' día' + (appliedCount === 1 ? '' : 's') + '. ' + skippedCount + ' día' + (skippedCount === 1 ? '' : 's') + ' se omitió por tener ya otra novedad distinta registrada.', "ok");
+    }
+  }
+
+  /* permite al líder/jefe deshacer una decisión ya tomada (aprobada o rechazada)
+     y devolver la solicitud a "Pendiente" para resolverla de nuevo. Si al
+     aprobarla se había registrado la novedad automáticamente en el horario,
+     aquí se quita esa novedad de los días que siguen teniendo exactamente esa
+     misma novedad (si el líder ya editó ese día a mano después, no se toca). */
+  async function reopenShiftRequest(id) {
+    var r = state.shiftRequests.find(function(x){ return x.id === id; });
+    if (!r) return;
+    var novedadType = REQ_TYPE_TO_NOVEDAD[r.type];
+    var wasApproved = r.status === "approved";
+    var confirmMsg = '¿Confirmas que quieres reabrir esta solicitud de ' + escapeHtml(empNameById(r.empId)) + ' (' + (wasApproved ? 'estaba aprobada' : 'estaba rechazada') + ')? Volverá a quedar pendiente para que la resuelvas de nuevo.';
+    if (wasApproved && novedadType) {
+      confirmMsg += '\n\nAdemás, se quitará "' + TYPE_LABEL[novedadType] + '" del horario en los días de este rango que todavía tengan esa novedad sin cambios posteriores.';
+    }
+    if (!confirm(confirmMsg)) return;
+
+    var revertedCount = 0, skippedCount = 0;
+    if (wasApproved && novedadType) {
+      var range = reqDateRange(r);
+      var writes = [];
+      datesInRange(range.start, range.end).forEach(function(dISO){
+        var existing = state.shifts[empKey(r.empId, dISO)];
+        if (!existing || existing.type !== novedadType) { skippedCount++; return; }
+        revertedCount++;
+        writes.push(saveShift(r.empId, dISO, null));
+      });
+      await Promise.all(writes);
+      renderAll();
+    }
+
+    r.status = "pending";
+    r.resolvedAt = null;
+    r.resolvedByName = "";
+    updateReqBadge();
+    renderRequestsPanel();
+    renderMySchedule();
+
+    if (db) {
+      setSync(true);
+      try { await db.doc("shiftRequests/" + id).set({ empId: r.empId, dateISO: r.dateISO, dateStart: r.dateStart, dateEnd: r.dateEnd, type: r.type, reqStart: r.reqStart, reqEnd: r.reqEnd, note: r.note, status: r.status, createdAt: r.createdAt, resolvedAt: null, resolvedByName: "" }); } catch(e) {}
+      setSync(false);
+    }
+
+    if (wasApproved && novedadType) {
+      showToast('Solicitud reabierta. Se quitó "' + TYPE_LABEL[novedadType] + '" de ' + revertedCount + ' día' + (revertedCount === 1 ? '' : 's') + (skippedCount ? (' (' + skippedCount + ' día' + (skippedCount === 1 ? '' : 's') + ' se dejó igual por tener cambios posteriores).') : '.'), "ok");
+    } else {
+      showToast("Solicitud reabierta, queda pendiente de nuevo.", "ok");
     }
   }
 
@@ -6692,11 +6750,32 @@
 
   /* notificaciones propias de un empleado en "Mi horario": solo lo que le
      concierne a él (respuestas del líder/jefe a sus solicitudes), nunca las
-     alertas de gestión de la cuadrilla completa que ve el líder/jefe */
+     alertas de gestión de la cuadrilla completa que ve el líder/jefe.
+     Se guarda por empleado (en este dispositivo) cuáles ya vio, para que al
+     abrir la campana desaparezcan de la lista aunque el historial completo
+     siga disponible en la pestaña "Solicitudes". */
+  var EMP_NOTIF_SEEN_KEY = "control-turnos-emp-notif-seen";
+  function getEmpNotifSeen(empId) {
+    try {
+      var all = JSON.parse(localStorage.getItem(EMP_NOTIF_SEEN_KEY) || "{}");
+      return all[empId] || [];
+    } catch(e) { return []; }
+  }
+  function markEmpNotifSeen(empId, ids) {
+    if (!ids.length) return;
+    try {
+      var all = JSON.parse(localStorage.getItem(EMP_NOTIF_SEEN_KEY) || "{}");
+      var seen = all[empId] || [];
+      ids.forEach(function(id){ if (seen.indexOf(id) === -1) seen.push(id); });
+      all[empId] = seen;
+      localStorage.setItem(EMP_NOTIF_SEEN_KEY, JSON.stringify(all));
+    } catch(e) {}
+  }
   function computeEmpAlertItems(empId) {
     var items = [];
     if (!empId) return items;
-    var myReqs = state.shiftRequests.filter(function(r){ return r.empId === empId && r.status !== "pending"; })
+    var seen = getEmpNotifSeen(empId);
+    var myReqs = state.shiftRequests.filter(function(r){ return r.empId === empId && r.status !== "pending" && seen.indexOf(r.id) === -1; })
       .sort(function(a,b){ return (b.resolvedAt || 0) - (a.resolvedAt || 0); });
     myReqs.forEach(function(r){
       var range = reqDateRange(r);
@@ -6706,6 +6785,7 @@
         : (dStart.getDate() + " " + MONTHS[dStart.getMonth()] + " – " + dEnd.getDate() + " " + MONTHS[dEnd.getMonth()]);
       var approved = r.status === "approved";
       items.push({
+        id: r.id,
         cls: approved ? "alert-ok" : "alert-crit", icon: approved ? "✅" : "✖",
         html: '<b>' + REQ_TYPE_LABEL[r.type] + (approved ? ' aprobada' : ' rechazada') + '</b> — ' + dateStr +
           (r.resolvedByName ? ' <span class="names">(por ' + escapeHtml(r.resolvedByName) + ')</span>' : ''),
@@ -6752,6 +6832,17 @@
   function openNotifPanel() {
     renderNotifPanel();
     document.getElementById("homeNotifPanel").classList.add("open");
+    /* al abrir la campana, el empleado ya las vio: se marcan y desaparecen
+       de la lista la próxima vez (con una pequeña pausa para que alcance a leerlas) */
+    if (mySchedUnlockedEmpId) {
+      var idsNow = computeEmpAlertItems(mySchedUnlockedEmpId).map(function(it){ return it.id; });
+      if (idsNow.length) {
+        setTimeout(function(){
+          markEmpNotifSeen(mySchedUnlockedEmpId, idsNow);
+          renderNotifBell();
+        }, 1500);
+      }
+    }
   }
   function closeNotifPanel() {
     document.getElementById("homeNotifPanel").classList.remove("open");
