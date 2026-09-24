@@ -303,6 +303,7 @@
   .sidebar-btn-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sidebar-btn:hover { background: var(--brand-surface); color: var(--brand-ink); }
   .sidebar-btn.active { background: var(--brand-active-bg); color: var(--brand-active-ink); }
+  .sidebar-divider { height: 1px; background: var(--brand-border); margin: 8px 6px; flex-shrink: 0; }
   .sidebar-req-badge {
     display: inline-flex; align-items: center; justify-content: center; margin-left: 6px;
     min-width: 17px; height: 17px; border-radius: 100px; padding: 0 4px;
@@ -1505,6 +1506,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
+  <button type="button" class="sidebar-btn" data-tab="home" title="Inicio" aria-label="Inicio">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10"/></svg>
+    <span class="sidebar-btn-label">Inicio</span>
+  </button>
   <button type="button" class="sidebar-btn active" data-tab="sched" title="Programación" aria-label="Programación">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
     <span class="sidebar-btn-label">Programación</span>
@@ -1548,6 +1553,11 @@
   <button type="button" class="sidebar-btn" data-tab="params" title="Parámetros" aria-label="Parámetros">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     <span class="sidebar-btn-label">Parámetros</span>
+  </button>
+  <div class="sidebar-divider"></div>
+  <button type="button" class="sidebar-btn" id="sidebarProfileBtn" title="Perfil y configuración" aria-label="Perfil, configuración y cerrar sesión">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>
+    <span class="sidebar-btn-label" id="sidebarProfileLabel">Perfil y configuración</span>
   </button>
 </nav>
 
@@ -7737,6 +7747,7 @@
   document.getElementById("menuToggleBtn").addEventListener("click", openSidebar);
   document.getElementById("sidebarCloseBtn").addEventListener("click", closeSidebar);
   document.getElementById("sidebarOverlay").addEventListener("click", closeSidebar);
+  document.getElementById("sidebarProfileBtn").addEventListener("click", function(){ closeSidebar(); openFsMenu(); });
   document.addEventListener("keydown", function(e){
     if (e.key === "Escape") closeSidebar();
   });
