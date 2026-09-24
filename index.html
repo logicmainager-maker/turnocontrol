@@ -459,7 +459,10 @@
   .home-sync-pill {
     display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--brand-ink-soft);
     background: rgba(255,255,255,0.12); border: 1px solid var(--brand-border); padding: 5px 10px; border-radius: 100px;
+    flex-shrink: 0; white-space: nowrap;
   }
+  .home-brand { flex-shrink: 1; min-width: 0; overflow: hidden; }
+  .home-brand span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .home-notif-btn {
     position: relative; appearance: none; border: 1px solid var(--brand-border); background: rgba(255,255,255,0.12);
     color: var(--brand-ink); width: 34px; height: 34px; border-radius: 100px; cursor: pointer;
@@ -1200,7 +1203,7 @@
 
   /* employee-only mode: entered without a líder/jefe/visor session, from the
      login screen's "Soy empleado" link — only "Mi horario" is reachable. */
-  body.employee-only-mode .sidebar-btn:not([data-tab="home"]):not([data-tab="myschedule"]):not([data-tab="mynovelties"]):not([data-tab="myrequests"]):not([data-tab="myreports"]) { display: none !important; }
+  body.employee-only-mode .sidebar-btn:not([data-tab="home"]):not([data-tab="myschedule"]):not([data-tab="mynovelties"]):not([data-tab="myrequests"]):not([data-tab="myreports"]):not(#sidebarProfileBtn) { display: none !important; }
   body.employee-only-mode .sidebar-btn.emp-only-tab { display: flex !important; }
   body.employee-only-mode .topbar { display: none !important; }
   body.employee-only-mode .alerts-banner { display: none !important; }
