@@ -1573,62 +1573,11 @@
   </button>
 </nav>
 
-<!-- FULL-SCREEN MENU: opened from the bottom nav's "Menú" button. Three
-     sub-screens (menú principal / perfil / configuración) reusing the same
-     state and functions as the old sidebar + small profile dropdown. -->
-<div class="fs-screen" id="fsMenuScreen" aria-label="Menú">
-  <div class="fs-screen-head">
-    <button type="button" class="fs-close-btn" id="fsMenuCloseBtn" aria-label="Cerrar menú">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-    <div class="fs-screen-title">Menú</div>
-  </div>
-  <div class="fs-screen-body">
-    <div class="wrap">
-      <button type="button" class="menu-profile-row" id="fsMenuProfileBtn">
-        <span class="menu-profile-avatar" id="fsMenuProfileAvatar">?</span>
-        <span class="menu-profile-text">
-          <span class="menu-profile-name" id="fsMenuProfileName">—</span>
-          <span class="menu-profile-link">Ver perfil</span>
-        </span>
-        <span class="menu-profile-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-      </button>
-
-      <div>
-        <div class="menu-segment-label">Navegación</div>
-        <div class="menu-segment" id="fsMenuNavSegment"><!-- populated from the sidebar's own data-tab buttons --></div>
-      </div>
-
-      <div>
-        <div class="menu-segment-label">Configuración y privacidad</div>
-        <div class="menu-segment">
-          <button type="button" class="menu-item" id="fsMenuSettingsBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-            <span class="menu-item-label">Cambiar PIN, notificaciones y tema</span>
-            <svg class="menu-item-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="menu-segment">
-        <button type="button" class="menu-item danger" id="fsMenuLogoutBtn" style="display:none">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-          <span class="menu-item-label">Cerrar sesión</span>
-        </button>
-        <button type="button" class="menu-item danger" id="fsMenuExitEmployeeBtn" style="display:none">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-          <span class="menu-item-label">Cerrar sesión</span>
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- FULL-SCREEN PROFILE: name, role, and (employee only) cédula/teléfono -->
+<!-- FULL-SCREEN PROFILE: name, role, (employee only) cédula/teléfono, seguridad, tema y cerrar sesión — todo en una sola pantalla, abierta desde "Perfil y configuración" en el sidebar -->
 <div class="fs-screen" id="fsProfileScreen" aria-label="Perfil">
   <div class="fs-screen-head">
-    <button type="button" class="fs-back-btn" id="fsProfileBackBtn" aria-label="Volver al menú">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    <button type="button" class="fs-close-btn" id="fsProfileCloseBtn" aria-label="Cerrar perfil">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <div class="fs-screen-title">Perfil</div>
   </div>
@@ -1639,42 +1588,36 @@
         <span class="profile-detail-name" id="fsProfileName">—</span>
         <span class="profile-detail-role" id="fsProfileRole">—</span>
       </div>
-      <div class="menu-segment">
-        <div class="profile-fields" id="fsProfileFields"><!-- filled in JS: usuario/cédula/teléfono depending on modo --></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- FULL-SCREEN CONFIGURACIÓN: PIN/contraseña (reusa el modal existente), notificaciones (preferencia local), tema -->
-<div class="fs-screen" id="fsSettingsScreen" aria-label="Configuración y privacidad">
-  <div class="fs-screen-head">
-    <button type="button" class="fs-back-btn" id="fsSettingsBackBtn" aria-label="Volver al menú">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
-    <div class="fs-screen-title">Configuración y privacidad</div>
-  </div>
-  <div class="fs-screen-body">
-    <div class="wrap">
-      <div class="menu-segment">
-        <button type="button" class="menu-item" id="fsSettingsChangeSecretBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-          <span class="menu-item-label" id="fsSettingsChangeSecretLabel">Cambiar PIN</span>
-          <svg class="menu-item-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </div>
-      <div class="menu-segment">
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-title">Aviso en la campana</div>
-            <div class="settings-row-sub">Muestra un punto rojo en 🔔 cuando hay pendientes (no son notificaciones push del celular)</div>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="notifToggle" aria-label="Aviso en la campana: muestra un punto rojo cuando hay pendientes">
-            <span class="toggle-switch-track"></span>
-          </label>
+      <div>
+        <div class="menu-segment-label">Datos</div>
+        <div class="menu-segment">
+          <div class="profile-fields" id="fsProfileFields"><!-- filled in JS: usuario/cédula/teléfono depending on modo --></div>
         </div>
       </div>
+
+      <div>
+        <div class="menu-segment-label">Seguridad</div>
+        <div class="menu-segment">
+          <button type="button" class="menu-item" id="fsSettingsChangeSecretBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <span class="menu-item-label" id="fsSettingsChangeSecretLabel">Cambiar PIN</span>
+            <svg class="menu-item-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="menu-segment" style="margin-top:6px;">
+          <div class="settings-row">
+            <div class="settings-row-text">
+              <div class="settings-row-title">Aviso en la campana</div>
+              <div class="settings-row-sub">Muestra un punto rojo en 🔔 cuando hay pendientes (no son notificaciones push del celular)</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="notifToggle" aria-label="Aviso en la campana: muestra un punto rojo cuando hay pendientes">
+              <span class="toggle-switch-track"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
       <div>
         <div class="menu-segment-label">Tema</div>
         <div class="menu-segment">
@@ -1692,6 +1635,17 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="menu-segment">
+        <button type="button" class="menu-item danger" id="fsMenuLogoutBtn" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          <span class="menu-item-label">Cerrar sesión</span>
+        </button>
+        <button type="button" class="menu-item danger" id="fsMenuExitEmployeeBtn" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          <span class="menu-item-label">Cerrar sesión</span>
+        </button>
       </div>
     </div>
   </div>
@@ -7461,13 +7415,14 @@
     t.addEventListener("click", function(){ switchTab(t.getAttribute("data-tab")); });
   });
 
-  /* ---------- bottom nav (Inicio / Menú) ---------- */
+  /* ---------- bottom nav (Inicio / Menú) — solo se ve en pantallas donde
+     sigue habilitada la barra inferior; la navegación principal ahora vive
+     en el sidebar (hamburguesa), con "Perfil y configuración" como pantalla
+     única (ya no hay un "Menú" intermedio con submenús) */
   function updateBottomNav() {
     var homeBtn = document.getElementById("bottomNavHomeBtn");
     var menuBtn = document.getElementById("bottomNavMenuBtn");
-    var menuOpen = document.getElementById("fsMenuScreen").classList.contains("open") ||
-      document.getElementById("fsProfileScreen").classList.contains("open") ||
-      document.getElementById("fsSettingsScreen").classList.contains("open");
+    var menuOpen = document.getElementById("fsProfileScreen").classList.contains("open");
     homeBtn.classList.toggle("active", !menuOpen && currentTab === "home");
     menuBtn.classList.toggle("active", menuOpen);
   }
@@ -7477,38 +7432,21 @@
     var needsPin = !currentUser && document.body.classList.contains("employee-only-mode") && !mySchedUnlockedEmpId;
     switchTab(needsPin ? "myschedule" : "home");
   });
-  document.getElementById("bottomNavMenuBtn").addEventListener("click", function(){ openFsMenu(); });
+  document.getElementById("bottomNavMenuBtn").addEventListener("click", function(){ openFsProfile(); });
 
-  /* ---------- full-screen Menu / Perfil / Configuración ---------- */
+  /* ---------- full-screen Perfil (datos + seguridad + tema + cerrar sesión, todo en una sola pantalla) ---------- */
   function closeFsScreens() {
-    ["fsMenuScreen","fsProfileScreen","fsSettingsScreen"].forEach(function(id){
-      document.getElementById(id).classList.remove("open");
-    });
-  }
-  function openFsMenu() {
-    closeSidebar();
-    renderFsMenu();
-    closeFsScreens();
-    document.getElementById("fsMenuScreen").classList.add("open");
-    updateBottomNav();
+    document.getElementById("fsProfileScreen").classList.remove("open");
   }
   function openFsProfile() {
+    closeSidebar();
     renderFsProfile();
+    renderFsSettings();
     closeFsScreens();
     document.getElementById("fsProfileScreen").classList.add("open");
     updateBottomNav();
   }
-  function openFsSettings() {
-    renderFsSettings();
-    closeFsScreens();
-    document.getElementById("fsSettingsScreen").classList.add("open");
-    updateBottomNav();
-  }
-  document.getElementById("fsMenuCloseBtn").addEventListener("click", function(){ closeFsScreens(); updateBottomNav(); });
-  document.getElementById("fsProfileBackBtn").addEventListener("click", openFsMenu);
-  document.getElementById("fsSettingsBackBtn").addEventListener("click", openFsMenu);
-  document.getElementById("fsMenuProfileBtn").addEventListener("click", openFsProfile);
-  document.getElementById("fsMenuSettingsBtn").addEventListener("click", openFsSettings);
+  document.getElementById("fsProfileCloseBtn").addEventListener("click", function(){ closeFsScreens(); updateBottomNav(); });
   document.getElementById("fsSettingsChangeSecretBtn").addEventListener("click", openChangeSecretModal);
   document.getElementById("fsMenuLogoutBtn").addEventListener("click", function(){ closeFsScreens(); logout(); });
   document.getElementById("fsMenuExitEmployeeBtn").addEventListener("click", function(){ closeFsScreens(); exitEmployeeOnlyMode(); });
@@ -7536,75 +7474,25 @@
     return { mode: "none", displayName: "Sin sesión", roleLabel: "—", initials: "?" };
   }
 
-  function renderFsMenu() {
-    var id = currentIdentity();
-    document.getElementById("fsMenuProfileAvatar").textContent = id.initials;
-    document.getElementById("fsMenuProfileName").textContent = id.displayName;
-
-    /* navigation segment: cloned from the sidebar's own buttons, so role
-       permissions (can(), role-visor/role-lider/role-jefe, emp-only-tab)
-       keep working exactly as before — this only changes the container. */
-    var seg = document.getElementById("fsMenuNavSegment");
-    seg.innerHTML = "";
-    document.querySelectorAll(".sidebar-btn[data-tab]").forEach(function(src){
-      var tab = src.getAttribute("data-tab");
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "menu-item" + (src.classList.contains("emp-only-tab") ? " emp-only-tab" : "");
-      btn.setAttribute("data-tab", tab);
-      var svg = src.querySelector("svg").cloneNode(true);
-      var label = document.createElement("span");
-      label.className = "menu-item-label";
-      label.textContent = src.querySelector(".sidebar-btn-label").firstChild ? src.querySelector(".sidebar-btn-label").firstChild.textContent : src.textContent;
-      btn.appendChild(svg);
-      btn.appendChild(label);
-      var badge = src.querySelector(".sidebar-req-badge");
-      if (badge) {
-        var badgeClone = badge.cloneNode(true);
-        badgeClone.removeAttribute("id");
-        label.appendChild(badgeClone);
-      }
-      var chev = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      chev.setAttribute("class", "menu-item-chev");
-      chev.setAttribute("viewBox", "0 0 24 24");
-      chev.setAttribute("fill", "none");
-      chev.setAttribute("stroke", "currentColor");
-      chev.setAttribute("stroke-width", "2");
-      chev.setAttribute("stroke-linecap", "round");
-      chev.setAttribute("stroke-linejoin", "round");
-      chev.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
-      btn.appendChild(chev);
-      btn.addEventListener("click", function(){ switchTab(tab); });
-      seg.appendChild(btn);
-      /* same visibility rule as the original sidebar button: CSS rules that hide/show
-         .sidebar-btn by role or by employee-only-mode use selectors scoped to that class,
-         so they never reach this cloned .menu-item — read the ACTUAL rendered visibility
-         of the source button (inline style + every matching CSS rule) instead of just
-         copying its inline style, so role/mode-based hiding stays in sync automatically. */
-      if (window.getComputedStyle(src).display === "none") btn.style.display = "none";
-    });
-
-    document.getElementById("fsMenuSettingsBtn").querySelector(".menu-item-label").textContent =
-      id.mode === "user" ? "Cambiar contraseña, notificaciones y tema" : "Cambiar PIN, notificaciones y tema";
-
-    var logoutBtn = document.getElementById("fsMenuLogoutBtn");
-    var exitBtn = document.getElementById("fsMenuExitEmployeeBtn");
-    logoutBtn.style.display = id.mode === "user" ? "flex" : "none";
-    exitBtn.style.display = id.mode === "employee" ? "flex" : "none";
-  }
-
   function renderFsProfile() {
     var id = currentIdentity();
     document.getElementById("fsProfileAvatar").textContent = id.initials;
     document.getElementById("fsProfileName").textContent = id.displayName;
     document.getElementById("fsProfileRole").textContent = id.roleLabel;
 
+    var logoutBtn = document.getElementById("fsMenuLogoutBtn");
+    var exitBtn = document.getElementById("fsMenuExitEmployeeBtn");
+    logoutBtn.style.display = id.mode === "user" ? "flex" : "none";
+    exitBtn.style.display = id.mode === "employee" ? "flex" : "none";
+
     var fields = document.getElementById("fsProfileFields");
     var rows = [];
     if (id.mode === "user") {
+      rows.push(["Nombre", currentUser.displayName]);
       rows.push(["Usuario", currentUser.username]);
       rows.push(["Rol", id.roleLabel]);
     } else if (id.mode === "employee" && id.emp) {
+      rows.push(["Nombre", id.emp.name]);
       rows.push(["Cédula", id.emp.cedula || "—"]);
       rows.push(["Teléfono", id.emp.phone || "—"]);
     } else {
@@ -7747,7 +7635,7 @@
   document.getElementById("menuToggleBtn").addEventListener("click", openSidebar);
   document.getElementById("sidebarCloseBtn").addEventListener("click", closeSidebar);
   document.getElementById("sidebarOverlay").addEventListener("click", closeSidebar);
-  document.getElementById("sidebarProfileBtn").addEventListener("click", function(){ closeSidebar(); openFsMenu(); });
+  document.getElementById("sidebarProfileBtn").addEventListener("click", function(){ openFsProfile(); });
   document.addEventListener("keydown", function(e){
     if (e.key === "Escape") closeSidebar();
   });
