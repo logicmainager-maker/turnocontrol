@@ -259,17 +259,15 @@
   /* the small "Perfil" dropdown is replaced by the full-screen Menu/Perfil
      screens on every size; its markup stays in the DOM but is never shown */
   .profile-wrap { display: none !important; }
-  /* navegación: en móvil se usa la barra inferior (Inicio/Menú) + pantallas
-     completas de Menú/Perfil; en pantallas grandes (escritorio) se usa el
-     ícono de menú hamburguesa de arriba, que abre el panel lateral, porque
-     ahí sobra espacio y la barra inferior no aporta nada
-     (el padding-bottom para escritorio se define más abajo, después de la
-     regla que reserva espacio para la barra inferior en móvil, para que gane) */
-  .menu-toggle-btn { display: none; }
-  @media (min-width: 900px) {
-    .menu-toggle-btn { display: flex; }
-    .bottom-nav { display: none !important; }
-  }
+  /* navegación: se usa el ícono de menú hamburguesa de arriba (abre el panel
+     lateral) en todos los tamaños de pantalla, PC y móvil. La barra inferior
+     (Inicio/Menú) se dejó de usar porque en pantallas chicas terminaba
+     tapando el contenido final de algunas pestañas largas (ej. Usuarios y
+     permisos); su marcado y lógica quedan en el DOM mientras se decide si
+     se retira del todo, pero no se muestran.
+     (el padding-bottom se define más abajo, después de la regla vieja que
+     reservaba espacio para la barra inferior, para que esta gane) */
+  .bottom-nav { display: none !important; }
 
   .sidebar-overlay {
     position: fixed; inset: 0; background: rgba(10,14,20,0.4); z-index: 45;
@@ -442,9 +440,8 @@
   }
   .bottom-nav-btn svg { width: 22px; height: 22px; }
   .bottom-nav-btn.active { color: var(--accent); }
-  .app-main { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 64px); }
-  /* en escritorio no hay barra inferior (se usa la hamburguesa de arriba), así que no hace falta reservarle espacio */
-  @media (min-width: 900px) { .app-main { padding-bottom: 20px; } }
+  /* sin barra inferior en ningún tamaño (se usa la hamburguesa de arriba), así que no hace falta reservarle espacio extra */
+  .app-main { padding-bottom: 20px; }
 
   /* ---------- Home screen: Sura-style header (brand + greeting) over white content ---------- */
   .home-header {
