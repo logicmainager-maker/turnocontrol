@@ -493,6 +493,7 @@
   .notif-icon { flex-shrink: 0; font-size: 15px; line-height: 1.3; }
   .notif-icon.alert-crit { color: var(--crit); }
   .notif-icon.alert-warn { color: var(--warn); }
+  .notif-icon.alert-ok { color: var(--ok); }
   .notif-text { font-size: 12.5px; line-height: 1.45; color: var(--ink-soft); }
   .notif-text b { color: var(--ink); }
   .notif-text .names { color: var(--muted); }
@@ -2127,7 +2128,7 @@
   <section class="panel" id="panel-requests">
     <div class="params-card">
       <h3>Solicitudes de cambio de turno</h3>
-      <p class="params-hint">Cuando un empleado hace una solicitud desde "Mi horario", aparece aquí para que la apruebes o la rechaces. Al aprobar <b>vacaciones, incapacidad o permiso</b>, la novedad se registra sola en el horario para todo el rango de fechas. Al aprobar un <b>cambio de horario o día libre</b> puntual, no se modifica el turno automáticamente — usa "Ir al turno" para editarlo tú mismo en Programación.</p>
+      <p class="params-hint">Cuando un empleado hace una solicitud desde "Mi horario", aparece aquí para que la apruebes o la rechaces. Si la fecha propuesta no te sirve, usa <b>"Modificar"</b> para cambiarla antes de aprobar. Al aprobar <b>vacaciones, incapacidad o permiso</b>, la novedad se registra sola en el horario para todo el rango de fechas. Al aprobar un <b>cambio de horario o día libre</b> puntual, no se modifica el turno automáticamente — usa "Ir al turno" para editarlo tú mismo en Programación.</p>
       <div class="preset-row">
         <button type="button" class="preset-btn active" id="reqFilterPending">Pendientes</button>
         <button type="button" class="preset-btn" id="reqFilterAll">Todas</button>
@@ -2360,6 +2361,40 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="rangeReqCancel">Cancelar</button>
       <button class="btn btn-accent" id="rangeReqSubmit">Enviar solicitud</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modificar fecha(s) de una solicitud antes de aprobarla (líder/jefe) -->
+<div class="modal-backdrop" id="editReqModalBackdrop">
+  <div class="modal" style="max-width: 380px;">
+  <div class="modal-scroll">
+    <h3>Modificar solicitud</h3>
+    <p class="params-hint" style="margin:0;" id="editReqWho"></p>
+    <div class="field-row">
+      <div class="field">
+        <label for="editReqStart">Desde</label>
+        <input type="date" id="editReqStart">
+      </div>
+      <div class="field">
+        <label for="editReqEnd">Hasta</label>
+        <input type="date" id="editReqEnd">
+      </div>
+    </div>
+    <div class="field-row" id="editReqTimeRow" style="display:none;">
+      <div class="field">
+        <label for="editReqTimeStart">Hora entrada</label>
+        <input type="time" id="editReqTimeStart">
+      </div>
+      <div class="field">
+        <label for="editReqTimeEnd">Hora salida</label>
+        <input type="time" id="editReqTimeEnd">
+      </div>
+    </div>
+  </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="editReqCancel">Cancelar</button>
+      <button class="btn btn-accent" id="editReqSave">Guardar cambios</button>
     </div>
   </div>
 </div>
@@ -5770,6 +5805,7 @@
       var actions = r.status === "pending" ? (
         '<div class="tmpl-actions" style="margin-top:6px;">' +
           '<button type="button" data-req-goto="' + r.id + '">Ir al turno</button>' +
+          '<button type="button" data-req-edit="' + r.id + '">Modificar</button>' +
           '<button type="button" data-req-approve="' + r.id + '">Aprobar</button>' +
           '<button type="button" class="tmpl-rm-btn" data-req-reject="' + r.id + '">Rechazar</button>' +
         '</div>'
@@ -5788,6 +5824,9 @@
         switchTab("sched"); currentMonday = mondayOf(parseISO(reqDateRange(r).start)); renderAll();
       });
     });
+    list.querySelectorAll("[data-req-edit]").forEach(function(btn){
+      btn.addEventListener("click", function(){ openEditReqModal(btn.getAttribute("data-req-edit")); });
+    });
     list.querySelectorAll("[data-req-approve]").forEach(function(btn){
       btn.addEventListener("click", function(){ resolveShiftRequest(btn.getAttribute("data-req-approve"), "approved"); });
     });
@@ -5795,6 +5834,61 @@
       btn.addEventListener("click", function(){ resolveShiftRequest(btn.getAttribute("data-req-reject"), "rejected"); });
     });
   }
+
+  /* permite al líder/jefe ajustar la(s) fecha(s) — y, para cambio de horario,
+     también la hora — que un empleado propuso, antes de aprobar la solicitud */
+  var editReqTargetId = null;
+  function openEditReqModal(id) {
+    var r = state.shiftRequests.find(function(x){ return x.id === id; });
+    if (!r) return;
+    editReqTargetId = id;
+    var range = reqDateRange(r);
+    document.getElementById("editReqWho").textContent = escapeHtml(empNameById(r.empId)) + " — " + REQ_TYPE_LABEL[r.type];
+    document.getElementById("editReqStart").value = range.start;
+    document.getElementById("editReqEnd").value = range.end;
+    var timeRow = document.getElementById("editReqTimeRow");
+    if (r.type === "change") {
+      timeRow.style.display = "";
+      document.getElementById("editReqTimeStart").value = r.reqStart || "";
+      document.getElementById("editReqTimeEnd").value = r.reqEnd || "";
+    } else {
+      timeRow.style.display = "none";
+    }
+    document.getElementById("editReqModalBackdrop").classList.add("open");
+  }
+  function closeEditReqModal() {
+    document.getElementById("editReqModalBackdrop").classList.remove("open");
+    editReqTargetId = null;
+  }
+  document.getElementById("editReqCancel").addEventListener("click", closeEditReqModal);
+  document.getElementById("editReqModalBackdrop").addEventListener("click", function(e){
+    if (e.target === e.currentTarget) closeEditReqModal();
+  });
+  document.getElementById("editReqSave").addEventListener("click", async function(){
+    var r = state.shiftRequests.find(function(x){ return x.id === editReqTargetId; });
+    if (!r) { closeEditReqModal(); return; }
+    var newStart = document.getElementById("editReqStart").value;
+    var newEnd = document.getElementById("editReqEnd").value;
+    if (!newStart || !newEnd || newEnd < newStart) { alert("Revisa las fechas: la fecha final no puede ser anterior a la inicial."); return; }
+    r.dateStart = newStart;
+    r.dateEnd = newEnd;
+    r.dateISO = newStart;
+    if (r.type === "change") {
+      var newTimeStart = document.getElementById("editReqTimeStart").value;
+      var newTimeEnd = document.getElementById("editReqTimeEnd").value;
+      if (!newTimeStart || !newTimeEnd) { alert("Ingresa la hora de entrada y salida."); return; }
+      r.reqStart = newTimeStart;
+      r.reqEnd = newTimeEnd;
+    }
+    closeEditReqModal();
+    renderRequestsPanel();
+    if (db) {
+      setSync(true);
+      try { await db.doc("shiftRequests/" + r.id).set({ empId: r.empId, dateISO: r.dateISO, dateStart: r.dateStart, dateEnd: r.dateEnd, type: r.type, reqStart: r.reqStart, reqEnd: r.reqEnd, note: r.note, status: r.status, createdAt: r.createdAt, resolvedAt: r.resolvedAt || null, resolvedByName: r.resolvedByName || "" }); } catch(e) {}
+      setSync(false);
+    }
+    showToast("Fechas de la solicitud actualizadas. Revisa y aprueba cuando esté lista.", "ok");
+  });
   document.getElementById("reqFilterPending").addEventListener("click", function(){
     reqFilterMode = "pending";
     document.getElementById("reqFilterPending").classList.add("active");
@@ -6596,12 +6690,37 @@
     return items;
   }
 
+  /* notificaciones propias de un empleado en "Mi horario": solo lo que le
+     concierne a él (respuestas del líder/jefe a sus solicitudes), nunca las
+     alertas de gestión de la cuadrilla completa que ve el líder/jefe */
+  function computeEmpAlertItems(empId) {
+    var items = [];
+    if (!empId) return items;
+    var myReqs = state.shiftRequests.filter(function(r){ return r.empId === empId && r.status !== "pending"; })
+      .sort(function(a,b){ return (b.resolvedAt || 0) - (a.resolvedAt || 0); });
+    myReqs.forEach(function(r){
+      var range = reqDateRange(r);
+      var dStart = parseISO(range.start), dEnd = parseISO(range.end);
+      var dateStr = range.start === range.end
+        ? (DAY_NAMES_SHORT[dStart.getDay()] + " " + dStart.getDate() + " " + MONTHS[dStart.getMonth()])
+        : (dStart.getDate() + " " + MONTHS[dStart.getMonth()] + " – " + dEnd.getDate() + " " + MONTHS[dEnd.getMonth()]);
+      var approved = r.status === "approved";
+      items.push({
+        cls: approved ? "alert-ok" : "alert-crit", icon: approved ? "✅" : "✖",
+        html: '<b>' + REQ_TYPE_LABEL[r.type] + (approved ? ' aprobada' : ' rechazada') + '</b> — ' + dateStr +
+          (r.resolvedByName ? ' <span class="names">(por ' + escapeHtml(r.resolvedByName) + ')</span>' : ''),
+        onClick: function(){ switchTab("myrequests"); }
+      });
+    });
+    return items;
+  }
+
   /* ---------- notification bell (Inicio header): replaces the old always-open alerts banner ---------- */
   function renderNotifBell() {
     var dot = document.getElementById("homeNotifDot");
     var btn = document.getElementById("homeNotifBtn");
     if (!btn) return;
-    var items = computeAlertItems(true);
+    var items = mySchedUnlockedEmpId ? computeEmpAlertItems(mySchedUnlockedEmpId) : computeAlertItems(true);
     /* el interruptor "Notificaciones" de Configuración controla el punto rojo
        de aviso (silenciarlo), no la campana en sí: la lista sigue disponible
        al presionarla, solo deja de "avisar" visualmente si el usuario lo apaga */
@@ -6613,7 +6732,7 @@
   function renderNotifPanel() {
     var list = document.getElementById("homeNotifList");
     if (!list) return;
-    var items = computeAlertItems(true);
+    var items = mySchedUnlockedEmpId ? computeEmpAlertItems(mySchedUnlockedEmpId) : computeAlertItems(true);
     if (!items.length) {
       list.innerHTML = '<div class="empty-note">Sin pendientes por ahora.</div>';
       return;
