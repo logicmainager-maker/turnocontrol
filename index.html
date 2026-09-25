@@ -1910,7 +1910,7 @@
               </button>
             </div>
           </div>
-          <p class="login-hint" id="mySchedForgotPinHint" style="display:none;">¿Olvidaste tu PIN? Pídele a tu líder o jefe que te asigne uno nuevo desde Parámetros → Empleados.</p>
+          <button type="button" class="login-forgot-link" id="mySchedForgotPinBtn" style="display:none;">¿Olvidaste tu PIN?</button>
           <label class="check-row" id="mySchedRememberRow" style="display:none;">
             <input type="checkbox" id="mySchedRememberDevice">
             <span>Recordar este dispositivo (acceso rápido sin PIN la próxima vez)</span>
@@ -2685,7 +2685,8 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </div>
-      <p class="params-hint" style="margin:0;">El empleado usa este PIN para entrar a "Mi horario" y ver solo su propia información. Déjalo vacío si por ahora no quieres darle acceso.</p>
+      <p class="params-hint" style="margin:0;">El empleado usa este PIN para entrar a "Mi horario" y ver solo su propia información. Déjalo vacío para asignarle automáticamente los últimos 4 dígitos de su cédula como PIN temporal (se le pedirá cambiarlo en su primer ingreso).</p>
+      <button type="button" class="btn btn-ghost" id="empResetPinBtn" style="display:none;margin-top:8px;width:100%;">Restablecer PIN al valor por defecto</button>
     </div>
   </div>
     <div class="modal-actions">
@@ -2732,6 +2733,87 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="changeSecretCancel">Cancelar</button>
       <button class="btn btn-accent" id="changeSecretSave">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Forced setup for employees: primer ingreso (PIN por defecto = últimos 4
+     dígitos de la cédula) o después de que el líder/jefe restablece el PIN.
+     El empleado debe definir un PIN propio y una pregunta de seguridad antes
+     de continuar; no se puede cerrar haciendo clic afuera (solo "Cancelar y
+     salir", que lo regresa a la pantalla de bloqueo). -->
+<div class="modal-backdrop" id="empFirstSetupBackdrop">
+  <div class="modal">
+  <div class="modal-scroll">
+    <h3>Configura tu acceso</h3>
+    <p class="params-hint" style="margin-top:-6px;">Es tu primer ingreso o tu líder reinició tu PIN. Crea un PIN nuevo que solo tú conozcas, y una pregunta de seguridad para poder recuperarlo si lo olvidas.</p>
+    <div class="field">
+      <label for="empSetupNewPin">PIN nuevo (4 dígitos)</label>
+      <div class="pass-field">
+        <input type="password" id="empSetupNewPin" inputmode="numeric" maxlength="4" pattern="[0-9]*" autocomplete="off">
+        <button type="button" class="pass-toggle" id="empSetupNewPinToggle" aria-label="Mostrar PIN">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="empSetupConfirmPin">Confirmar PIN</label>
+      <div class="pass-field">
+        <input type="password" id="empSetupConfirmPin" inputmode="numeric" maxlength="4" pattern="[0-9]*" autocomplete="off">
+        <button type="button" class="pass-toggle" id="empSetupConfirmPinToggle" aria-label="Mostrar PIN">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="empSetupSecQuestion">Pregunta de seguridad</label>
+      <input type="text" id="empSetupSecQuestion" placeholder="Ej. ¿Nombre de tu mascota?" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="empSetupSecAnswer">Respuesta</label>
+      <input type="text" id="empSetupSecAnswer" placeholder="Tu respuesta" autocomplete="off">
+    </div>
+    <p class="login-error" id="empSetupError" style="display:none;"></p>
+  </div>
+    <div class="modal-actions" style="flex-direction:column;gap:8px;">
+      <button class="btn btn-accent login-submit" id="empSetupSaveBtn">Guardar y continuar</button>
+      <button class="btn btn-ghost login-submit" id="empSetupCancelBtn">Cancelar y salir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Employee PIN recovery (self-service, vía pregunta de seguridad) -->
+<div class="modal-backdrop" id="empRecoverBackdrop">
+  <div class="modal">
+  <div class="modal-scroll">
+    <h3>Recuperar mi PIN</h3>
+    <div id="empRecoverNoQuestion" style="display:none;">
+      <p class="params-hint">Todavía no tienes una pregunta de seguridad configurada. Pídele a tu líder o jefe que te restablezca el PIN desde Parámetros → Empleados.</p>
+    </div>
+    <div id="empRecoverStep2" style="display:none;">
+      <p class="params-hint" id="empRecoverQuestionText"></p>
+      <div class="field">
+        <label for="empRecoverAnswer">Tu respuesta</label>
+        <input type="text" id="empRecoverAnswer" placeholder="Respuesta" autocomplete="off">
+      </div>
+    </div>
+    <div id="empRecoverStep3" style="display:none;">
+      <p class="params-hint">Respuesta correcta. Define tu nuevo PIN.</p>
+      <div class="field">
+        <label for="empRecoverNewPin">PIN nuevo (4 dígitos)</label>
+        <div class="pass-field">
+          <input type="password" id="empRecoverNewPin" inputmode="numeric" maxlength="4" pattern="[0-9]*" autocomplete="off">
+          <button type="button" class="pass-toggle" id="empRecoverNewPinToggle" aria-label="Mostrar PIN">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <p class="login-error" id="empRecoverError" style="display:none"></p>
+  </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="empRecoverCancel">Cancelar</button>
+      <button class="btn btn-accent" id="empRecoverNextBtn" style="display:none;">Continuar</button>
     </div>
   </div>
 </div>
@@ -3207,7 +3289,7 @@
       } else {
         empSnap.docs.forEach(function(d){
           var data = d.data();
-          state.employees.push({ id: d.id, name: data.name, order: data.order || 0, active: data.active !== false, sixDay: !!data.sixDay, group: data.group || "normal", cedula: data.cedula || "", phone: data.phone || "", cargo: data.cargo || "", pinHash: data.pinHash || "" });
+          state.employees.push({ id: d.id, name: data.name, order: data.order || 0, active: data.active !== false, sixDay: !!data.sixDay, group: data.group || "normal", cedula: data.cedula || "", phone: data.phone || "", cargo: data.cargo || "", pinHash: data.pinHash || "", mustChangePin: !!data.mustChangePin, securityQuestion: data.securityQuestion || "", securityAnswerHash: data.securityAnswerHash || "" });
         });
         state.employees.sort(function(a,b){ return a.order - b.order; });
       }
@@ -3313,7 +3395,7 @@
     unsubEmployees = db.collection("employees").onSnapshot(function(snap){
       state.employees = snap.docs.map(function(d){
         var data = d.data();
-        return { id: d.id, name: data.name, order: data.order || 0, active: data.active !== false, sixDay: !!data.sixDay, group: data.group || "normal", cedula: data.cedula || "", phone: data.phone || "", cargo: data.cargo || "", pinHash: data.pinHash || "" };
+        return { id: d.id, name: data.name, order: data.order || 0, active: data.active !== false, sixDay: !!data.sixDay, group: data.group || "normal", cedula: data.cedula || "", phone: data.phone || "", cargo: data.cargo || "", pinHash: data.pinHash || "", mustChangePin: !!data.mustChangePin, securityQuestion: data.securityQuestion || "", securityAnswerHash: data.securityAnswerHash || "" };
       }).filter(function(e){ return e.active; }).sort(function(a,b){ return a.order - b.order; });
       renderAll();
     }, function(){ /* keep last known state */ });
@@ -3422,7 +3504,7 @@
   async function saveEmployee(emp) {
     if (!db) { renderAll(); return; }
     setSync(true);
-    try { await db.doc("employees/" + emp.id).set({ name: emp.name, order: emp.order, active: emp.active, sixDay: !!emp.sixDay, group: emp.group || "normal", cedula: emp.cedula || "", phone: emp.phone || "", cargo: emp.cargo || "", pinHash: emp.pinHash || "" }); }
+    try { await db.doc("employees/" + emp.id).set({ name: emp.name, order: emp.order, active: emp.active, sixDay: !!emp.sixDay, group: emp.group || "normal", cedula: emp.cedula || "", phone: emp.phone || "", cargo: emp.cargo || "", pinHash: emp.pinHash || "", mustChangePin: !!emp.mustChangePin, securityQuestion: emp.securityQuestion || "", securityAnswerHash: emp.securityAnswerHash || "" }); }
     catch(e) {}
     setSync(false);
   }
@@ -3790,6 +3872,126 @@
     if (e.target === e.currentTarget) closeRecoverModal();
   });
   document.getElementById("recoverNextBtn").addEventListener("click", recoverAdvance);
+
+  /* ---------- empleado: configuración forzada de PIN + pregunta de seguridad
+     (primer ingreso con el PIN por defecto, o después de que el líder/jefe
+     lo restablece) ---------- */
+  var empSetupPendingId = null;
+
+  function openEmpFirstSetupModal(empId) {
+    empSetupPendingId = empId;
+    document.getElementById("empSetupNewPin").value = "";
+    document.getElementById("empSetupConfirmPin").value = "";
+    document.getElementById("empSetupSecQuestion").value = "";
+    document.getElementById("empSetupSecAnswer").value = "";
+    document.getElementById("empSetupError").style.display = "none";
+    document.getElementById("empFirstSetupBackdrop").classList.add("open");
+    setTimeout(function(){ document.getElementById("empSetupNewPin").focus(); }, 50);
+  }
+  function closeEmpFirstSetupModal() {
+    document.getElementById("empFirstSetupBackdrop").classList.remove("open");
+    empSetupPendingId = null;
+  }
+  document.getElementById("empSetupCancelBtn").addEventListener("click", function(){
+    closeEmpFirstSetupModal();
+    lockMySchedule();
+  });
+  document.getElementById("empSetupSaveBtn").addEventListener("click", function(){
+    var errEl = document.getElementById("empSetupError");
+    errEl.style.display = "none";
+    var emp = state.employees.find(function(e){ return e.id === empSetupPendingId; });
+    if (!emp) { closeEmpFirstSetupModal(); return; }
+    var pin = document.getElementById("empSetupNewPin").value.trim();
+    var confirmPin = document.getElementById("empSetupConfirmPin").value.trim();
+    var q = document.getElementById("empSetupSecQuestion").value.trim();
+    var a = document.getElementById("empSetupSecAnswer").value.trim();
+    if (!/^\d{4}$/.test(pin)) { errEl.textContent = "El PIN debe tener exactamente 4 dígitos."; errEl.style.display = "block"; return; }
+    if (pin !== confirmPin) { errEl.textContent = "El PIN no coincide."; errEl.style.display = "block"; return; }
+    if (!q) { errEl.textContent = "Escribe una pregunta de seguridad."; errEl.style.display = "block"; return; }
+    if (!a) { errEl.textContent = "Escribe la respuesta a tu pregunta de seguridad."; errEl.style.display = "block"; return; }
+    emp.pinHash = simpleHash(pin);
+    emp.mustChangePin = false;
+    emp.securityQuestion = q;
+    emp.securityAnswerHash = simpleHash(a.toLowerCase());
+    saveEmployee(emp);
+    closeEmpFirstSetupModal();
+    showToast("Tu acceso quedó configurado.", "ok");
+    switchTab("home");
+  });
+  wirePassToggle("empSetupNewPin", "empSetupNewPinToggle");
+  wirePassToggle("empSetupConfirmPin", "empSetupConfirmPinToggle");
+
+  /* ---------- empleado: recuperar PIN olvidado (self-service, vía pregunta
+     de seguridad; usa el nombre ya elegido en el selector de la pantalla de
+     bloqueo) ---------- */
+  var empRecoverStep = 0;
+  var empRecoverEmp = null;
+
+  function openEmpRecoverModal() {
+    var errEl = document.getElementById("empRecoverError");
+    errEl.style.display = "none";
+    document.getElementById("empRecoverAnswer").value = "";
+    document.getElementById("empRecoverNewPin").value = "";
+    document.getElementById("empRecoverNoQuestion").style.display = "none";
+    document.getElementById("empRecoverStep2").style.display = "none";
+    document.getElementById("empRecoverStep3").style.display = "none";
+    var nextBtn = document.getElementById("empRecoverNextBtn");
+    var empId = document.getElementById("mySchedEmp").value;
+    var emp = state.employees.find(function(e){ return e.id === empId; });
+    if (!emp) {
+      errEl.textContent = "Primero elige tu nombre arriba.";
+      errEl.style.display = "block";
+      nextBtn.style.display = "none";
+      document.getElementById("empRecoverBackdrop").classList.add("open");
+      return;
+    }
+    empRecoverEmp = emp;
+    if (!emp.securityAnswerHash) {
+      document.getElementById("empRecoverNoQuestion").style.display = "";
+      nextBtn.style.display = "none";
+    } else {
+      document.getElementById("empRecoverQuestionText").textContent = emp.securityQuestion || "Pregunta de seguridad";
+      document.getElementById("empRecoverStep2").style.display = "";
+      nextBtn.style.display = "";
+      nextBtn.textContent = "Verificar respuesta";
+      empRecoverStep = 2;
+      setTimeout(function(){ document.getElementById("empRecoverAnswer").focus(); }, 50);
+    }
+    document.getElementById("empRecoverBackdrop").classList.add("open");
+  }
+  function closeEmpRecoverModal() {
+    document.getElementById("empRecoverBackdrop").classList.remove("open");
+  }
+  function empRecoverAdvance() {
+    var errEl = document.getElementById("empRecoverError");
+    errEl.style.display = "none";
+    if (empRecoverStep === 2) {
+      var answer = document.getElementById("empRecoverAnswer").value.trim().toLowerCase();
+      if (!answer || simpleHash(answer) !== empRecoverEmp.securityAnswerHash) { errEl.textContent = "La respuesta no coincide."; errEl.style.display = "block"; return; }
+      document.getElementById("empRecoverStep2").style.display = "none";
+      document.getElementById("empRecoverStep3").style.display = "";
+      document.getElementById("empRecoverNextBtn").textContent = "Guardar nuevo PIN";
+      empRecoverStep = 3;
+      setTimeout(function(){ document.getElementById("empRecoverNewPin").focus(); }, 50);
+    } else if (empRecoverStep === 3) {
+      var newPin = document.getElementById("empRecoverNewPin").value.trim();
+      if (!/^\d{4}$/.test(newPin)) { errEl.textContent = "El PIN debe tener 4 dígitos."; errEl.style.display = "block"; return; }
+      empRecoverEmp.pinHash = simpleHash(newPin);
+      empRecoverEmp.mustChangePin = false;
+      saveEmployee(empRecoverEmp);
+      closeEmpRecoverModal();
+      document.getElementById("mySchedPin").value = "";
+      document.getElementById("mySchedError").style.display = "none";
+      showToast("PIN actualizado. Ingresa con tu nuevo PIN.", "ok");
+    }
+  }
+  document.getElementById("mySchedForgotPinBtn").addEventListener("click", openEmpRecoverModal);
+  document.getElementById("empRecoverCancel").addEventListener("click", closeEmpRecoverModal);
+  document.getElementById("empRecoverBackdrop").addEventListener("click", function(e){
+    if (e.target === e.currentTarget) closeEmpRecoverModal();
+  });
+  document.getElementById("empRecoverNextBtn").addEventListener("click", empRecoverAdvance);
+  wirePassToggle("empRecoverNewPin", "empRecoverNewPinToggle");
 
   /* ---------- user management modal (Parámetros, jefe only) ---------- */
   var editingUserId = null;
@@ -4396,20 +4598,40 @@
   }
 
   /* ---------- employees ---------- */
+  /* PIN por defecto = últimos 4 dígitos de la cédula. Se usa al crear un
+     empleado sin PIN explícito, y al restablecer el PIN desde el panel de
+     líder/jefe. Devuelve null si la cédula no tiene al menos 4 dígitos. */
+  function defaultPinFromCedula(cedula) {
+    var digits = String(cedula || "").replace(/\D/g, "");
+    return digits.length >= 4 ? digits.slice(-4) : null;
+  }
+
   function addEmployee(fields) {
     var name = (fields.name || "").trim();
     if (!name) return;
     var id = seedKey(name) + "-" + Math.random().toString(36).slice(2,6);
     var order = state.employees.length;
+    var cedula = (fields.cedula || "").trim();
+    var pinHash = "", mustChangePin = false, assignedDefaultPin = null;
+    if (fields.newPin) {
+      pinHash = simpleHash(fields.newPin);
+      mustChangePin = true;
+    } else {
+      assignedDefaultPin = defaultPinFromCedula(cedula);
+      if (assignedDefaultPin) { pinHash = simpleHash(assignedDefaultPin); mustChangePin = true; }
+    }
     var emp = {
       id: id, name: name, order: order, active: true,
       sixDay: !!fields.sixDay, group: fields.group || "normal",
-      cedula: (fields.cedula || "").trim(), phone: (fields.phone || "").trim(), cargo: (fields.cargo || "").trim(),
-      pinHash: fields.newPin ? simpleHash(fields.newPin) : ""
+      cedula: cedula, phone: (fields.phone || "").trim(), cargo: (fields.cargo || "").trim(),
+      pinHash: pinHash, mustChangePin: mustChangePin, securityQuestion: "", securityAnswerHash: ""
     };
     state.employees.push(emp);
     renderAll();
     saveEmployee(emp);
+    if (assignedDefaultPin) {
+      showToast('Empleado creado. Su PIN temporal es ' + assignedDefaultPin + ' (últimos 4 dígitos de su cédula). Se le pedirá crear uno nuevo en su primer ingreso.', "ok");
+    }
   }
 
   function updateEmployee(id, fields) {
@@ -4423,9 +4645,36 @@
     emp.cedula = (fields.cedula || "").trim();
     emp.phone = (fields.phone || "").trim();
     emp.cargo = (fields.cargo || "").trim();
-    if (fields.newPin) emp.pinHash = simpleHash(fields.newPin);
+    if (fields.newPin) {
+      emp.pinHash = simpleHash(fields.newPin);
+      emp.mustChangePin = true;
+      emp.securityQuestion = "";
+      emp.securityAnswerHash = "";
+    }
     renderAll();
     saveEmployee(emp);
+  }
+
+  /* líder/jefe: vuelve el PIN al valor por defecto (últimos 4 dígitos de la
+     cédula) y obliga al empleado a definir un PIN nuevo + pregunta de
+     seguridad en su próximo ingreso (ver mustChangePin en attemptMySchedUnlock) */
+  function resetEmployeePin(id) {
+    var emp = state.employees.find(function(e){ return e.id === id; });
+    if (!emp) return;
+    var defaultPin = defaultPinFromCedula(emp.cedula);
+    if (!defaultPin) {
+      showToast("Este empleado no tiene cédula registrada (o tiene menos de 4 dígitos). Complétala primero para poder generar el PIN por defecto.", "error");
+      return;
+    }
+    if (!confirm('¿Restablecer el PIN de "' + emp.name + '" a su valor por defecto? Se le pedirá crear un PIN nuevo y una pregunta de seguridad en su próximo ingreso.')) return;
+    emp.pinHash = simpleHash(defaultPin);
+    emp.mustChangePin = true;
+    emp.securityQuestion = "";
+    emp.securityAnswerHash = "";
+    saveEmployee(emp);
+    showToast('PIN restablecido. El nuevo PIN temporal es ' + defaultPin + '.', "ok");
+    var pinInput = document.getElementById("empPin");
+    if (pinInput) { pinInput.value = ""; pinInput.placeholder = "•••• (ya tiene PIN — escribe uno nuevo para cambiarlo)"; }
   }
 
   function removeEmployee(id) {
@@ -4862,6 +5111,7 @@
     var pinInput = document.getElementById("empPin");
     pinInput.value = "";
     pinInput.placeholder = emp && emp.pinHash ? "•••• (ya tiene PIN — escribe uno nuevo para cambiarlo)" : "Ej. 4821";
+    document.getElementById("empResetPinBtn").style.display = (emp && emp.pinHash) ? "" : "none";
     document.getElementById("empModalBackdrop").classList.add("open");
   }
   function closeEmployeeModal() {
@@ -4872,6 +5122,10 @@
   document.getElementById("empModalCancel").addEventListener("click", closeEmployeeModal);
   document.getElementById("empModalBackdrop").addEventListener("click", function(e){
     if (e.target === e.currentTarget) closeEmployeeModal();
+  });
+  document.getElementById("empResetPinBtn").addEventListener("click", function(){
+    if (!editingEmployeeId) return;
+    resetEmployeePin(editingEmployeeId);
   });
   document.getElementById("empModalSave").addEventListener("click", function(){
     var name = document.getElementById("empName").value;
@@ -5305,7 +5559,7 @@
     var emp = state.employees.find(function(e){ return e.id === document.getElementById("mySchedEmp").value; });
     var pinField = document.getElementById("mySchedPinField");
     var noPinHint = document.getElementById("mySchedNoPinHint");
-    var forgotPinHint = document.getElementById("mySchedForgotPinHint");
+    var forgotPinHint = document.getElementById("mySchedForgotPinBtn");
     var unlockBtn = document.getElementById("mySchedUnlockBtn");
     var rememberRow = document.getElementById("mySchedRememberRow");
     var biometricRow = document.getElementById("mySchedBiometricRow");
@@ -5411,6 +5665,13 @@
     document.body.classList.remove("emp-pin-locked");
     document.getElementById("mySchedPin").value = "";
     updateProfileMenu();
+    /* PIN por defecto (primer ingreso, o el líder/jefe lo acaba de
+       restablecer): antes de dejarlo seguir, le pide definir un PIN propio
+       y una pregunta de seguridad */
+    if (emp.mustChangePin) {
+      openEmpFirstSetupModal(empId);
+      return;
+    }
     /* tras un PIN correcto, entra a Inicio (con el saludo y el resumen) en vez
        de quedarse en la pantalla de "Mi horario" */
     switchTab("home");
